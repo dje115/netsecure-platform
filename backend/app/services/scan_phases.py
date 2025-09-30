@@ -241,14 +241,16 @@ class Phase4VulnerabilityScanning(ScanPhase):
         return results
 
 
+# Import extended phases
+from app.services.scan_phases_extended import EXTENDED_PHASES
+
 # Define all 11 phases
 SCAN_PHASES = [
     Phase1NetworkDiscovery(),
     Phase2HVTIdentification(),
     Phase3ServiceEnumeration(),
     Phase4VulnerabilityScanning(),
-    # Phases 5-11 would be implemented similarly
-]
+] + EXTENDED_PHASES
 
 
 class ScanOrchestrator:
