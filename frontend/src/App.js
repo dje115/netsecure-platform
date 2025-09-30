@@ -5,6 +5,7 @@ import Scans from './pages/Scans';
 import Devices from './pages/Devices';
 import Vulnerabilities from './pages/Vulnerabilities';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Navigation from './components/Navigation';
 
@@ -72,6 +73,11 @@ function AppContent() {
           <Route path="/reports" element={
             <ProtectedRoute>
               <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           } />
         </Routes>
