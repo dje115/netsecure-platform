@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
-function Login() {
+function Login({ setIsAuthenticated }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
@@ -37,6 +37,12 @@ function Login() {
         // Store token
         localStorage.setItem('token', response.data.access_token);
         
+        // Trigger auth change event
+        window.dispatchEvent(new Event('authChange'));
+        if (setIsAuthenticated) {
+          setIsAuthenticated(true);
+        }
+        
         // Redirect to dashboard
         navigate('/');
       } else {
@@ -55,6 +61,13 @@ function Login() {
         });
         
         localStorage.setItem('token', loginResponse.data.access_token);
+        
+        // Trigger auth change event
+        window.dispatchEvent(new Event('authChange'));
+        if (setIsAuthenticated) {
+          setIsAuthenticated(true);
+        }
+        
         navigate('/');
       }
     } catch (err) {
