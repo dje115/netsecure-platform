@@ -13,13 +13,52 @@ function Dashboard() {
   });
   const [recentScans, setRecentScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scannerStatus, setScannerStatus] = useState({
+    online: false,
+    checking: true,
+    stats: null
+  });
   
   useEffect(() => {
     loadDashboardData();
-    // Refresh every 10 seconds
-    const interval = setInterval(loadDashboardData, 10000);
-    return () => clearInterval(interval);
+    checkScannerStatus();
+    
+    // Refresh dashboard every 10 seconds
+    const dashboardInterval = setInterval(loadDashboardData, 10000);
+    // Check scanner every 30 seconds
+    const scannerInterval = setInterval(checkScannerStatus, 30000);
+    
+    return () => {
+      clearInterval(dashboardInterval);
+      clearInterval(scannerInterval);
+    };
   }, []);
+  
+  const checkScannerStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:9000/service/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setScannerStatus({
+          online: true,
+          checking: false,
+          stats: data
+        });
+      } else {
+        setScannerStatus({
+          online: false,
+          checking: false,
+          stats: null
+        });
+      }
+    } catch (error) {
+      setScannerStatus({
+        online: false,
+        checking: false,
+        stats: null
+      });
+    }
+  };
   
   const loadDashboardData = async () => {
     try {

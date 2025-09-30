@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: Optional[str] = None
     
     # Scanner Service (WSL2)
-    WSL_SCANNER_URL: str = "http://localhost:9000"
-    WSL_SCANNER_HOST: str = "localhost"
+    WSL_SCANNER_URL: str = "http://host.docker.internal:9000"
+    WSL_SCANNER_HOST: str = "host.docker.internal"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
