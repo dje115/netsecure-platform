@@ -134,8 +134,11 @@ async def get_scan(scan_id: int):
     }
 
 
-async def execute_scan_background(scan_id: int, db: Session):
+async def execute_scan_background(scan_id: int):
     """Background task to execute the scan"""
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    
     try:
         # Get scan session
         scan = db.query(ScanSession).filter(ScanSession.id == scan_id).first()
@@ -161,11 +164,13 @@ async def execute_scan_background(scan_id: int, db: Session):
         logger.info(f"Scan {scan_id} completed: {result.get('status')}")
         
     except Exception as e:
-        logger.error(f"Scan {scan_id} failed: {e}")
+        logger.error(f"Scan {scan_id} failed: {e}", exc_info=True)
         scan = db.query(ScanSession).filter(ScanSession.id == scan_id).first()
         if scan:
             scan.status = "failed"
             db.commit()
+    finally:
+        db.close()
 
 
 @router.post("/{scan_id}/start")
@@ -188,7 +193,7 @@ async def start_scan(
         raise HTTPException(status_code=400, detail="Scan already completed. Create a new scan.")
     
     # Add to background tasks
-    background_tasks.add_task(execute_scan_background, scan_id, db)
+    background_tasks.add_task(execute_scan_background, scan_id)
     
     return {
         "id": scan_id,
