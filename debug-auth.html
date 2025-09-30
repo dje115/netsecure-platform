@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth - Security Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .section { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 5px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .output { background: #1f2937; color: #10b981; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin-top: 10px; max-height: 400px; overflow-y: auto; }
+        .error { color: #ef4444; }
+        .success { color: #10b981; }
+        .warning { color: #f59e0b; }
+        input { padding: 8px; margin: 5px 0; width: 300px; border: 1px solid #ddd; border-radius: 4px; }
+        h2 { color: #1f2937; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+        .status { display: inline-block; padding: 5px 10px; border-radius: 4px; margin: 5px 0; }
+        .status.ok { background: #10b981; color: white; }
+        .status.fail { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Security Platform - Authentication Debugger</h1>
+    
+    <div class="section">
+        <h2>📊 Current Status</h2>
+        <div id="status">Checking...</div>
+        <button onclick="checkStatus()">Refresh Status</button>
+        <button onclick="clearAll()">Clear All Data & Logout</button>
+    </div>
+    
+    <div class="section">
+        <h2>1️⃣ Login</h2>
+        <input type="text" id="username" placeholder="Username" value="admin"><br>
+        <input type="password" id="password" placeholder="Password" value="admin"><br>
+        <button onclick="login()">Login</button>
+        <div id="login-output" class="output"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2️⃣ Test API Access</h2>
+        <button onclick="testScansAPI()">Test GET /api/scans/</button>
+        <button onclick="testDashboardAPI()">Test GET /api/dashboard/stats</button>
+        <button onclick="testCurrentUser()">Test GET /api/auth/me</button>
+        <div id="api-output" class="output"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3️⃣ Create Test Scan</h2>
+        <input type="text" id="scan_name" placeholder="Scan Name" value="Debug Test Scan"><br>
+        <input type="text" id="scan_target" placeholder="Target IP/Range" value="192.168.22.1"><br>
+        <button onclick="createScan()">Create Scan</button>
+        <div id="scan-output" class="output"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        function log(elementId, message, type = 'info') {
+            const output = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `[${timestamp}] <span class="${colorClass}">${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        async function checkStatus() {
+            const statusDiv = document.getElementById('status');
+            const token = localStorage.getItem('token');
+            
+            let html = '';
+            
+            // Check token
+            if (token) {
+                html += `<div class="status ok">✅ Token Present</div><br>`;
+                html += `<small>Token: ${token.substring(0, 30)}...</small><br>`;
+                
+                // Try to decode JWT (without verification)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    html += `<br><strong>Token Payload:</strong><br>`;
+                    html += `<small>Subject: ${payload.sub}<br>`;
+                    html += `Expires: ${new Date(payload.exp * 1000).toLocaleString()}</small><br>`;
+                    
+                    // Check if expired
+                    if (payload.exp * 1000 < Date.now()) {
+                        html += `<div class="status fail">⚠️ Token EXPIRED</div>`;
+                    } else {
+                        html += `<div class="status ok">✅ Token Valid</div>`;
+                    }
+                } catch (e) {
+                    html += `<div class="status fail">❌ Token Invalid Format</div>`;
+                }
+            } else {
+                html += `<div class="status fail">❌ No Token - Please Login</div>`;
+            }
+            
+            // Check API
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    html += `<div class="status ok">✅ API Reachable</div>`;
+                } else {
+                    html += `<div class="status fail">❌ API Error</div>`;
+                }
+            } catch (e) {
+                html += `<div class="status fail">❌ API Not Reachable</div>`;
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        async function login() {
+            clearLog('login-output');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            log('login-output', `Attempting login as: ${username}`);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                log('login-output', `Response Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log('login-output', `Response Data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok && data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    log('login-output', '✅ Login successful! Token saved.', 'success');
+                    checkStatus();
+                } else {
+                    log('login-output', '❌ Login failed!', 'error');
+                }
+            } catch (error) {
+                log('login-output', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testScansAPI() {
+            clearLog('api-output');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('api-output', '❌ No token! Please login first.', 'error');
+                return;
+            }
+            
+            log('api-output', 'Testing GET /api/scans/');
+            log('api-output', `Using token: ${token.substring(0, 30)}...`);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/scans/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log('api-output', `Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log('api-output', `Data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('api-output', `✅ Success! Found ${data.length} scans.`, 'success');
+                } else {
+                    log('api-output', '❌ Failed!', 'error');
+                }
+            } catch (error) {
+                log('api-output', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDashboardAPI() {
+            clearLog('api-output');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('api-output', '❌ No token! Please login first.', 'error');
+                return;
+            }
+            
+            log('api-output', 'Testing GET /api/dashboard/stats');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/dashboard/stats`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log('api-output', `Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log('api-output', `Data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('api-output', '✅ Dashboard API working!', 'success');
+                } else {
+                    log('api-output', '❌ Failed!', 'error');
+                }
+            } catch (error) {
+                log('api-output', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCurrentUser() {
+            clearLog('api-output');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('api-output', '❌ No token! Please login first.', 'error');
+                return;
+            }
+            
+            log('api-output', 'Testing GET /api/auth/me');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log('api-output', `Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log('api-output', `Data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('api-output', `✅ Logged in as: ${data.username}`, 'success');
+                } else {
+                    log('api-output', '❌ Failed!', 'error');
+                }
+            } catch (error) {
+                log('api-output', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createScan() {
+            clearLog('scan-output');
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                log('scan-output', '❌ No token! Please login first.', 'error');
+                return;
+            }
+            
+            const name = document.getElementById('scan_name').value;
+            const target = document.getElementById('scan_target').value;
+            
+            log('scan-output', `Creating scan: ${name} for target: ${target}`);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/scans/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        target_range: target,
+                        scan_type: 'quick'
+                    })
+                });
+                
+                log('scan-output', `Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log('scan-output', `Data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (response.ok) {
+                    log('scan-output', `✅ Scan created with ID: ${data.id}`, 'success');
+                    
+                    // Try to start it
+                    log('scan-output', 'Attempting to start scan...');
+                    const startResponse = await fetch(`${API_URL}/api/scans/${data.id}/start`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    const startData = await startResponse.json();
+                    log('scan-output', `Start Response: ${JSON.stringify(startData, null, 2)}`);
+                    
+                    if (startResponse.ok) {
+                        log('scan-output', '✅ Scan started successfully!', 'success');
+                    }
+                } else {
+                    log('scan-output', '❌ Failed to create scan!', 'error');
+                }
+            } catch (error) {
+                log('scan-output', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAll() {
+            localStorage.clear();
+            alert('All data cleared! Please login again.');
+            checkStatus();
+        }
+        
+        // Check status on load
+        window.onload = checkStatus;
+    </script>
+</body>
+</html>
