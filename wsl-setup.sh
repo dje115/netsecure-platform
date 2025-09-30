@@ -323,3 +323,4 @@ echo ""
 echo "To test the scanner service:"
 echo "  curl http://localhost:9000"
 echo ""
+

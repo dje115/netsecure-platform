@@ -54,3 +54,4 @@ class ScanLog(Base):
     
     # Relationships
     scan_session = relationship("ScanSession", back_populates="scan_logs")
+

@@ -481,3 +481,4 @@ class ReportGenerator:
 
 # Global report generator instance
 report_generator = ReportGenerator()
+

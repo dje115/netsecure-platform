@@ -88,3 +88,4 @@ async def get_vulnerability_stats():
         "patched": 45,
         "unpatched": 82
     }
+

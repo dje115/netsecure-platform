@@ -47,8 +47,11 @@ class Phase1NetworkDiscovery(ScanPhase):
         
         try:
             # Step 1: Network Discovery
+            print(f"=== PHASE 1 - Step 1: Network Discovery on {target} ===")
             logger.info(f"Phase 1 - Step 1: Network Discovery on {target}")
             discovery_result = await scanner_client.arp_scan(target)
+            print(f"Discovery result: {discovery_result}")
+            
             results["logs"].append({
                 "step": 1,
                 "tool": "nmap-discovery",
@@ -60,6 +63,7 @@ class Phase1NetworkDiscovery(ScanPhase):
             # Extract discovered hosts
             if discovery_result.get("hosts"):
                 results["devices_found"] = discovery_result.get("hosts", [])
+                print(f"Devices found: {len(results['devices_found'])}")
             
             # Step 2: Nmap Host Discovery
             logger.info(f"Phase 1 - Step 2: Nmap host discovery on {target}")
@@ -307,13 +311,20 @@ class ScanOrchestrator:
                 phase_result = await phase.execute(scan_session, db, target)
                 results["phases"].append(phase_result)
                 
+                # Extract devices found from Phase 1
+                if phase.phase_number == 1 and phase_result.get("devices_found"):
+                    devices = phase_result.get("devices_found", [])
+                    scan_session.devices_found = len(devices)
+                    print(f"Phase 1 found {len(devices)} devices, updating scan_session")
+                    logger.info(f"Phase 1 found {len(devices)} devices")
+                
                 # Calculate progress
                 progress = int((phase.phase_number / len(enabled_phases)) * 100)
                 scan_session.progress = progress
                 db.commit()
                 
             except Exception as e:
-                logger.error(f"Phase {phase.phase_number} failed: {e}")
+                logger.error(f"Phase {phase.phase_number} failed: {e}", exc_info=True)
                 results["phases"].append({
                     "phase": phase.phase_number,
                     "name": phase.name,

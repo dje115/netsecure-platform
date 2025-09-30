@@ -227,3 +227,4 @@ Each device shows:
 ---
 
 **Ready to scan?** Go to http://localhost:3000 and start discovering your network!
+

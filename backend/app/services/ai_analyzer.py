@@ -374,3 +374,4 @@ Format as JSON."""
 
 # Global AI analyzer instance
 ai_analyzer = AIAnalyzer()
+

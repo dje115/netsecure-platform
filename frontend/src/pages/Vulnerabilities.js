@@ -74,3 +74,4 @@ function Vulnerabilities() {
 }
 
 export default Vulnerabilities;
+

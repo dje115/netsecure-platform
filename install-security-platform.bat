@@ -104,3 +104,4 @@ echo   Status: wsl -d kali-linux sudo systemctl status security-scanner
 echo   Logs:   wsl -d kali-linux journalctl -u security-scanner -f
 echo.
 pause
+

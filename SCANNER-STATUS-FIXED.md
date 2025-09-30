@@ -241,3 +241,4 @@ If scans are still not working after this fix:
    wsl -d kali-linux tail -f /root/security-scanner/scanner.log
    ```
 
+

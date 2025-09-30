@@ -28,3 +28,4 @@ class User(Base):
     # API Keys
     openai_api_key = Column(String, nullable=True)
     anthropic_api_key = Column(String, nullable=True)
+

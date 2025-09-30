@@ -30,3 +30,4 @@ celery_app.autodiscover_tasks(["app.tasks"])
 
 if __name__ == "__main__":
     celery_app.start()
+

@@ -499,3 +499,4 @@ tar -xzf scanner-config-backup.tar.gz -C ~/
 ---
 
 **Need help?** Check the [Troubleshooting](#troubleshooting) section or open an issue on GitHub.
+

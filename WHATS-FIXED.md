@@ -270,3 +270,4 @@ Refer to **`TESTING-GUIDE.md`** for:
 - ✅ Clear debugging steps
 
 **Test Now**: Use `test-auth.html` to verify everything works!
+

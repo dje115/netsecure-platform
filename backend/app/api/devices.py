@@ -163,3 +163,4 @@ async def get_device_attack_paths(device_id: int):
             "impact_level": "high"
         }
     ]
+

@@ -307,3 +307,4 @@ docker-compose exec security-api curl http://host.docker.internal:9000/health
 | Authentication | ✅ Working | admin/admin123 |
 
 **Bottom Line**: Everything is installed and configured. Just need to start the scanner service to make scans work!
+

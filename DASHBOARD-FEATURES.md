@@ -296,3 +296,4 @@ Auto-refresh every 10 seconds
 **Now**: Auto-refreshes every 10 seconds
 
 **Click anything** on the dashboard to see more details! 🖱️✨
+

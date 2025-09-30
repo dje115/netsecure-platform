@@ -140,17 +140,24 @@ async def execute_scan_background(scan_id: int):
     db = SessionLocal()
     
     try:
+        print(f"=== SCAN BACKGROUND TASK STARTED: Scan ID {scan_id} ===")
+        logger.info(f"=== SCAN BACKGROUND TASK STARTED: Scan ID {scan_id} ===")
+        
         # Get scan session
         scan = db.query(ScanSession).filter(ScanSession.id == scan_id).first()
         if not scan:
+            print(f"ERROR: Scan {scan_id} not found in database")
             logger.error(f"Scan {scan_id} not found")
             return
+        
+        print(f"Found scan: {scan.name}, Target: {scan.target_range}")
         
         # Update status
         scan.status = "running"
         scan.started_at = datetime.utcnow()
         db.commit()
         
+        print(f"Scan status updated to 'running', calling orchestrator...")
         logger.info(f"Starting scan execution for scan {scan_id}")
         
         # Execute scan orchestrator
@@ -161,6 +168,7 @@ async def execute_scan_background(scan_id: int):
             scan.phases_enabled
         )
         
+        print(f"Scan {scan_id} orchestrator returned: {result.get('status')}")
         logger.info(f"Scan {scan_id} completed: {result.get('status')}")
         
     except Exception as e:

@@ -540,3 +540,4 @@ You now have a **complete REST API** in WSL2 that can:
 
 **Scanner is running at**: `http://localhost:9000`  
 **Test it now**: `curl http://localhost:9000/service/stats`
+
