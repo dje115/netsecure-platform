@@ -31,6 +31,87 @@ def root():
 def health():
     return jsonify({"status": "healthy"})
 
+@app.route('/service/status', methods=['GET'])
+def service_status():
+    """Get detailed service status"""
+    import os
+    import psutil
+    
+    # Get process info
+    pid = os.getpid()
+    process = psutil.Process(pid)
+    
+    # Get system info
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    memory = psutil.virtual_memory()
+    
+    # Get network interface info
+    try:
+        net_result = subprocess.run(['ip', 'addr', 'show', 'eth0'], 
+                                   capture_output=True, text=True, timeout=5)
+        network_info = net_result.stdout
+    except:
+        network_info = "Unable to get network info"
+    
+    return jsonify({
+        "service": "Security Scanner Service",
+        "status": "running",
+        "version": "1.0.0",
+        "pid": pid,
+        "uptime_seconds": int(time.time() - process.create_time()),
+        "memory_usage_mb": round(process.memory_info().rss / 1024 / 1024, 2),
+        "cpu_percent": cpu_percent,
+        "system_memory_percent": memory.percent,
+        "active_scans": len(active_scans),
+        "scan_list": list(active_scans.keys()),
+        "network_info": network_info,
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/service/restart', methods=['POST'])
+def service_restart():
+    """Restart the scanner service"""
+    import os
+    import signal
+    
+    pid = os.getpid()
+    
+    # Send SIGHUP to self (graceful restart)
+    os.kill(pid, signal.SIGHUP)
+    
+    return jsonify({
+        "status": "restarting",
+        "message": "Service restart initiated",
+        "pid": pid
+    })
+
+@app.route('/service/stats', methods=['GET'])
+def service_stats():
+    """Get service statistics"""
+    import os
+    
+    # Count tools available
+    tools_available = 0
+    tools_list = ['nmap', 'nikto', 'masscan', 'sqlmap', 'hydra', 'curl', 'ping']
+    available_tools = {}
+    
+    for tool in tools_list:
+        result = subprocess.run(['which', tool], capture_output=True)
+        is_available = result.returncode == 0
+        available_tools[tool] = is_available
+        if is_available:
+            tools_available += 1
+    
+    return jsonify({
+        "total_tools": len(tools_list),
+        "tools_available": tools_available,
+        "tools": available_tools,
+        "active_scans": len(active_scans),
+        "python_version": subprocess.run(['python3', '--version'], 
+                                        capture_output=True, text=True).stdout.strip(),
+        "timestamp": datetime.now().isoformat()
+    })
+
 @app.route('/scan/nmap', methods=['POST'])
 def nmap_scan():
     """Run an Nmap scan"""
