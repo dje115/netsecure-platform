@@ -41,15 +41,14 @@ class ScannerClient:
                     f"{self.base_url}/scan/nmap",
                     json={
                         "target": target,
-                        "scan_type": "nmap",
-                        "options": {"arguments": arguments}
+                        "arguments": arguments
                     }
                 )
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
             logger.error(f"Nmap scan failed: {e}")
-            return {"status": "failed", "error": str(e)}
+            return {"status": "failed", "error": str(e), "results": {}}
     
     async def get_scan_status(self, scan_id: str) -> Dict:
         """Get status of a running scan"""
@@ -62,41 +61,26 @@ class ScannerClient:
             logger.error(f"Failed to get scan status: {e}")
             return {"status": "error", "error": str(e)}
     
-    async def arp_scan(self, interface: str = "eth0") -> Dict:
-        """Execute ARP scan for network discovery"""
+    async def arp_scan(self, target: str = "192.168.1.0/24") -> Dict:
+        """Execute network discovery scan (replaces ARP scan)"""
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=180.0) as client:
                 response = await client.post(
-                    f"{self.base_url}/scan/arp",
+                    f"{self.base_url}/scan/discovery",
                     json={
-                        "target": interface,
-                        "scan_type": "arp",
-                        "options": {}
+                        "target": target
                     }
                 )
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
-            logger.error(f"ARP scan failed: {e}")
-            return {"status": "failed", "error": str(e)}
+            logger.error(f"Discovery scan failed: {e}")
+            return {"status": "failed", "error": str(e), "hosts_found": 0, "hosts": []}
     
     async def nikto_scan(self, target: str) -> Dict:
         """Execute Nikto web server scan"""
-        try:
-            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 minutes
-                response = await client.post(
-                    f"{self.base_url}/scan/nikto",
-                    json={
-                        "target": target,
-                        "scan_type": "nikto",
-                        "options": {}
-                    }
-                )
-                response.raise_for_status()
-                return response.json()
-        except Exception as e:
-            logger.error(f"Nikto scan failed: {e}")
-            return {"status": "failed", "error": str(e)}
+        logger.warning(f"Nikto scan not yet implemented for target {target}")
+        return {"status": "skipped", "message": "Nikto scan not yet implemented", "target": target}
     
     async def run_command(self, command: str, args: List[str], timeout: int = 300) -> Dict:
         """

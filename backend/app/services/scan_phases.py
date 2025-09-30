@@ -46,15 +46,20 @@ class Phase1NetworkDiscovery(ScanPhase):
         }
         
         try:
-            # Step 1: ARP Scan
-            logger.info(f"Phase 1 - Step 1: ARP Scan on {target}")
-            arp_result = await scanner_client.arp_scan()
+            # Step 1: Network Discovery
+            logger.info(f"Phase 1 - Step 1: Network Discovery on {target}")
+            discovery_result = await scanner_client.arp_scan(target)
             results["logs"].append({
                 "step": 1,
-                "tool": "arp-scan",
-                "status": arp_result.get("status", "unknown"),
-                "message": "ARP scan completed"
+                "tool": "nmap-discovery",
+                "status": discovery_result.get("status", "unknown"),
+                "hosts_found": discovery_result.get("hosts_found", 0),
+                "message": f"Discovery scan found {discovery_result.get('hosts_found', 0)} hosts"
             })
+            
+            # Extract discovered hosts
+            if discovery_result.get("hosts"):
+                results["devices_found"] = discovery_result.get("hosts", [])
             
             # Step 2: Nmap Host Discovery
             logger.info(f"Phase 1 - Step 2: Nmap host discovery on {target}")
